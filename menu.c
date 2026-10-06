@@ -26,6 +26,8 @@ typedef struct {
 static program_t programs[MAX_PROGRAMS];
 static unsigned int program_count;
 static int screen_page;
+static int video_width;
+static volatile unsigned short __far *video_memory;
 static unsigned char cursor_start;
 static unsigned char cursor_end;
 
@@ -34,11 +36,18 @@ static void get_screen_size(int *width, int *height)
   union REGS inregs;
   union REGS outregs;
   unsigned char rows;
+  unsigned char mode;
+  unsigned int page_size;
 
   inregs.h.ah = 0x0F;
   int86(0x10, &inregs, &outregs);
   *width = outregs.h.ah;
+  video_width = *width;
   screen_page = outregs.h.bh;
+  mode = outregs.h.al & 0x7F;
+  page_size = *width == 40 ? 0x0800 : 0x1000;
+  video_memory = (unsigned short __far *) MK_FP(mode == 7 ? 0xB000 : 0xB800,
+                                                screen_page * page_size);
 
   rows = *((unsigned char __far *) MK_FP(0x40, 0x84)) + 1;
   *height = rows >= 15 && rows <= 60 ? rows : 25;
@@ -86,16 +95,8 @@ static void set_cursor_visible(int visible)
 
 static void write_char(int column, int row, int character, int attribute)
 {
-  union REGS inregs;
-  union REGS outregs;
-
-  set_cursor(column, row);
-  inregs.h.ah = 0x09;
-  inregs.h.al = character;
-  inregs.h.bh = screen_page;
-  inregs.h.bl = attribute;
-  inregs.x.cx = 1;
-  int86(0x10, &inregs, &outregs);
+  video_memory[(row - 1) * video_width + column - 1] =
+      (unsigned short) character | ((unsigned short) attribute << 8);
 }
 
 static void clear_screen(int width, int height)
@@ -135,10 +136,11 @@ static void draw_text(int column, int row, int width, const char *text)
 {
   int count;
 
-  set_cursor(column, row);
   count = width - column;
-  while (count-- && *text)
-    putch(*text++);
+  while (count-- && *text) {
+    write_char(column++, row, *text++, 0x07);
+  }
+  set_cursor(column, row);
 }
 
 static void draw_rule(int row, int width, int left, int right)
@@ -172,9 +174,8 @@ static void draw_centered_framed_text(int row, int width, const char *text)
 
   draw_framed_text(row, width, "");
   column = (width - length) / 2 + 1;
-  set_cursor(column, row);
   while (length-- && *text)
-    putch(*text++);
+    write_char(column++, row, *text++, 0x07);
 }
 
 static void draw_menu_item(int row, int width, const char *text,
@@ -353,13 +354,21 @@ int main(void)
     } else if (key == 0x5000 && program_count) {
       if (selected + 1 < program_count && selected + 1 < top + visible)
         selected++;
-    } else if ((key == 0x4900 || key == 0x5100) && program_count) {
-      if (key == 0x4900) {
-        if (top)
-          selected = top > (unsigned int) visible ? top - visible : 0;
-      } else if (top + visible < program_count) {
-        selected = top + visible;
-      }
+    } else if (key == 0x4900 && program_count) {
+      if (selected > top)
+        selected = top;
+      else if (top)
+        selected = top - 1;
+    } else if (key == 0x5100 && program_count) {
+      unsigned int page_end;
+
+      page_end = top + visible - 1;
+      if (page_end >= program_count)
+        page_end = program_count - 1;
+      if (selected < page_end)
+        selected = page_end;
+      else if (page_end + 1 < program_count)
+        selected = page_end + 1;
     } else if ((key == '\r' || key == '\n') && program_count) {
       launch_program(selected);
       get_screen_size(&width, &height);
