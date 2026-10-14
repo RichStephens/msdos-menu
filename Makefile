@@ -19,8 +19,7 @@ all: $(TARGET)
 
 $(OBJECT): menu.c FORCE
 	mkdir -p build
-	$(WCC) $(CFLAGS) -d'MENU_TITLE="$(MENU_TITLE)"' \
-		-d'MENU_EXE_NAME="$(notdir $(TARGET))"' -fo=$@ $<
+	$(WCC) $(CFLAGS) -d'MENU_TITLE="$(MENU_TITLE)"' -fo=$@ $<
 
 $(TARGET): $(OBJECT) tools/limit_memory.py
 	$(WLINK) OPTION quiet SYSTEM dos name $@ file {$<}

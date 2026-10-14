@@ -10,10 +10,6 @@
 #define MENU_TITLE "Program Menu"
 #endif
 
-#ifndef MENU_EXE_NAME
-#define MENU_EXE_NAME "DOSMENU.EXE"
-#endif
-
 #define MAX_PROGRAMS 256
 #define NAME_LENGTH  13
 #define LIST_ROW     4
@@ -25,6 +21,7 @@ typedef struct {
 
 static program_t programs[MAX_PROGRAMS];
 static unsigned int program_count;
+static char self_name[NAME_LENGTH];
 static int screen_page;
 static int video_width;
 static volatile unsigned short __far *video_memory;
@@ -115,6 +112,18 @@ static void clear_screen(int width, int height)
   set_cursor(1, 1);
 }
 
+/* DOS 3+ gives the running program's full path as argv[0]. */
+static void set_self_name(const char *path)
+{
+  const char *base = path;
+
+  for (; *path; path++) {
+    if (*path == '\\' || *path == '/' || *path == ':')
+      base = path + 1;
+  }
+  strncpy(self_name, base, NAME_LENGTH - 1);
+}
+
 static void find_programs(void)
 {
   struct find_t file;
@@ -124,7 +133,7 @@ static void find_programs(void)
     return;
 
   do {
-    if (stricmp(file.name, MENU_EXE_NAME) && program_count < MAX_PROGRAMS) {
+    if (stricmp(file.name, self_name) && program_count < MAX_PROGRAMS) {
       strncpy(programs[program_count].name, file.name, NAME_LENGTH - 1);
       programs[program_count].name[NAME_LENGTH - 1] = '\0';
       program_count++;
@@ -310,7 +319,7 @@ static void launch_program(unsigned int selected)
   find_programs();
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
   unsigned int selected;
   unsigned int top;
@@ -322,6 +331,8 @@ int main(void)
   int width;
   int height;
 
+  (void) argc;
+  set_self_name(argv[0]);
   selected = 0;
   top = 0;
   find_programs();

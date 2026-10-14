@@ -1,7 +1,8 @@
 # msdos-menu
 
 A small Open Watcom C launcher for programs running under MS-DOS. It scans the
-current directory for up to 256 `.EXE` files, excluding itself.
+current directory for up to 256 `.EXE` files, excluding itself under whatever
+name it runs as.
 Use Up/Down to select a program, PgUp/PgDn to change pages, Enter to run it,
 and Esc to clear the screen and exit to DOS. The menu uses a centered title,
 line-drawn frame, and reverse-video selection bar, and adapts to the current
