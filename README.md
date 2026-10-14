@@ -54,8 +54,8 @@ image is not deployed automatically.
 
 The displayed title defaults to `Program Menu` and can be changed at build
 time, for example with `make MENU_TITLE="My Programs"`. The FujiNet test build
-clones this repository, builds it as `testmenu.exe` titled `FujiNet Test
-Programs`, and adds it to the MS-DOS test image.
+takes the latest release and puts `dosmenu.exe` on its MS-DOS test image as
+`TESTMENU.EXE`.
 
 ## Releasing
 
