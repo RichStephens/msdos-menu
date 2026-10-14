@@ -33,7 +33,9 @@ make clean
 ```
 
 `make` builds `dosmenu.exe`; `make clean` removes the executable and object
-file. To choose another executable basename, set `MENU_PROGRAM`, for example
+file. `make dist` zips `dosmenu.exe` into `dist/msdos-menu-<version>.zip`,
+which each [release](https://github.com/RichStephens/msdos-menu/releases)
+carries. To choose another executable basename, set `MENU_PROGRAM`, for example
 `make MENU_PROGRAM=testmenu` builds `testmenu.exe`. For a reproducible
 cross-platform toolchain, run `defoogi make` or
 `defoogi make clean` from this directory. `defoogi` is an optional external
@@ -51,9 +53,19 @@ toolchain. `DEMO_NAMES` can be overridden to change the demo program list. The
 image is not deployed automatically.
 
 The displayed title defaults to `Program Menu` and can be changed at build
-time, for example with `make MENU_TITLE="My Programs"`. The FujiNet testing
-build uses `testmenu.exe` and sets the title to `FujiNet Test Programs`.
+time, for example with `make MENU_TITLE="My Programs"`. The FujiNet test build
+clones this repository, builds it as `testmenu.exe` titled `FujiNet Test
+Programs`, and adds it to the MS-DOS test image.
 
-The FujiNet test build clones this repository into its local cache, sets the
-program name to `testmenu`, sets the title to `FujiNet Test Programs`, and adds
-`testmenu.exe` to the MS-DOS test image.
+## Releasing
+
+1. Rename `[Unreleased]` in `Changelog.md` to the new version and date, and
+   start an empty `[Unreleased]` above it.
+2. Commit and push to `main`.
+3. Tag and push the tag:
+
+       git tag v1.2.3
+       git push origin v1.2.3
+
+The release workflow builds the zip and publishes it with that changelog
+section as the notes. It fails if the newest section does not match the tag.

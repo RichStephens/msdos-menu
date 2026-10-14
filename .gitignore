@@ -1,4 +1,5 @@
 /build/
+/dist/
 /dosmenu.exe
 /testmenu.exe
 /testmenu-test.img

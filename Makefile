@@ -12,8 +12,9 @@ DEMO_NAMES ?= DEMO01 DEMO02 DEMO03 DEMO04 DEMO05 DEMO06 \
 	DEMO19 DEMO20 DEMO21 DEMO22 DEMO23 DEMO24
 DEMO_BINS = $(addprefix build/,$(addsuffix .exe,$(DEMO_NAMES)))
 TEST_DISK = testmenu-test.img
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null | sed 's/^v//')
 
-.PHONY: all clean test testdisk FORCE
+.PHONY: all clean test testdisk dist FORCE
 
 all: $(TARGET)
 
@@ -43,5 +44,11 @@ $(TEST_DISK): $(TARGET) $(DEMO_BINS)
 	mformat -i $@ -f 360
 	mcopy -i $@ $(TARGET) $(DEMO_BINS) ::/
 
+# The zip a GitHub release carries.
+dist: $(TARGET)
+	rm -rf dist
+	mkdir -p dist
+	zip -j dist/msdos-menu-$(VERSION).zip $(TARGET) README.md Changelog.md
+
 clean:
-	rm -rf build $(TARGET) $(TEST_DISK)
+	rm -rf build dist $(TARGET) $(TEST_DISK)
